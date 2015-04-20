@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using BusinessControllers;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
@@ -17,6 +18,7 @@ namespace MVCCashMachine.Controllers
     {
         private ApplicationSignInManager _signInManager;
         private ApplicationUserManager _userManager;
+
 
         public AccountController()
         {
@@ -52,6 +54,14 @@ namespace MVCCashMachine.Controllers
             }
         }
 
+        private BusinessController BusinessController //TODO - add support of the Unity to the project
+        {
+            get
+            {
+                return BusinessController.Instance;
+            }
+        }
+
         //
         // GET: /Account/Login
         [AllowAnonymous]
@@ -62,10 +72,30 @@ namespace MVCCashMachine.Controllers
         }
 
         [AllowAnonymous]
-        public ActionResult LoginCard(string returnUrl)
+        public ActionResult LoginCard()
         {
-            ViewBag.ReturnUrl = returnUrl;
             return View("LoginCardView");
+        }
+
+        [AllowAnonymous]
+        public ActionResult CheckCardNumber(CardModel model) //TODO: add server side validation
+        {
+            var isValid = BusinessController.CheckCardNumber(model.CardNumber);
+            var retVal = isValid ? View("CheckPinView", new PinModel { CardNumber = model.CardNumber }) : View("LoginCardView");
+            return retVal;
+        }
+
+        [AllowAnonymous]
+        public ActionResult CheckPin(PinModel model)
+        {
+            var isValid = BusinessController.CheckPinNumber(model.CardNumber, model.Pin);
+            if (isValid)
+            {
+
+                var redirect = RedirectToAction("GetOperations", "Home");
+                return redirect;
+            }
+            return View("CheckPinView", new PinModel { CardNumber = model.CardNumber, Pin = model.Pin });
         }
 
         //
